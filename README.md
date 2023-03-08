@@ -484,4 +484,36 @@ There are also many other files not described here, but it is useless to
 cover everything. We just want to help you with the first steps.
 Eventually you'll find your way inside the Redis code base :-)
 
-Enjoy!
+
+
+### vscode 编译 redis6.2
+* 先执行下面命令
+  ```
+  make CFLAGS="-g -O0"
+  ```
+* 在vscode的运行，点击【添加配置】
+
+```
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "debug redis",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/redis-server",
+            "args": ["redis.conf"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        }
+    ]
+}
+```
+
+* 点击debug就行
