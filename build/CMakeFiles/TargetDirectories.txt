@@ -1,0 +1,7 @@
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/example-glib.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/example-libevent.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/example-macosx.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/example.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/example-push.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/edit_cache.dir
+/Users/jianhui.zong/soft/redis-6.2.4/build/CMakeFiles/rebuild_cache.dir
