@@ -35,6 +35,7 @@
 #include <math.h>
 #include <ctype.h>
 
+/*设置协议错误处理*/
 static void setProtocolError(const char *errstr, client *c);
 int postponeClientRead(client *c);
 int ProcessingEventsWhileBlocked = 0; /* See processEventsWhileBlocked(). */
@@ -107,6 +108,9 @@ static void clientSetDefaultAuth(client *c) {
                        !(c->user->flags & USER_FLAG_DISABLED);
 }
 
+/**
+ * 创建链接
+*/
 client *createClient(connection *conn) {
     client *c = zmalloc(sizeof(client));
 
