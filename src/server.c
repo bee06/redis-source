@@ -3148,6 +3148,7 @@ void initServer(void) {
     }
 
     /* Initialization after setting defaults from the config system. */
+    /* 从配置系统中设置默认值后的初始化 */
     server.aof_state = server.aof_enabled ? AOF_ON : AOF_OFF;
     server.hz = server.config_hz;
     server.pid = getpid();
@@ -6319,12 +6320,14 @@ int main(int argc, char **argv) {
     }
 
     readOOMScoreAdj();
+    // 初始化
     initServer();
     if (background || server.pidfile) createPidFile();
     if (server.set_proc_title) redisSetProcTitle(NULL);
     redisAsciiArt();
     checkTcpBacklogSettings();
 
+    // 如果是哨兵模式
     if (!server.sentinel_mode) {
         /* Things not needed when running in Sentinel mode. */
         serverLog(LL_WARNING,"Server initialized");
