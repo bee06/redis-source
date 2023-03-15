@@ -4,7 +4,8 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ *  允许以源码和二进制的形式重新分发和使用，无论是否有修改。在满足以下条件的情况下，允许以源码和二进制的形式重新发布和使用，无论是否有修改。
+ * 
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright
@@ -26,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "server.h"
 #include "lzf.h"    /* LZF compression library */
 #include "zipmap.h"
