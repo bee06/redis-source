@@ -274,6 +274,7 @@ void setKey(client *c, redisDb *db, robj *key, robj *val) {
 /* Return a random key, in form of a Redis object.
  * If there are no keys, NULL is returned.
  *
+ * 以Redis对象的形式返回一个随机键
  * The function makes sure to return keys not already expired. */
 robj *dbRandomKey(redisDb *db) {
     dictEntry *de;
