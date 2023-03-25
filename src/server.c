@@ -3155,14 +3155,14 @@ void initServer(void) {
     signal(SIGPIPE, SIG_IGN);
     setupSignalHandlers();
     makeThreadKillable();
-
+    //开启了 Unix 系统日志，则调用 openlog()与 Unix 系统日志建立输出连接，以便输出系统日志
     if (server.syslog_enabled) {
         openlog(server.syslog_ident, LOG_PID | LOG_NDELAY | LOG_NOWAIT,
             server.syslog_facility);
     }
 
 
-    /* 设置默认值后的初始化 */
+    /* server 中运行时数据的相关属性 */
     server.aof_state = server.aof_enabled ? AOF_ON : AOF_OFF;
     server.hz = server.config_hz;
     server.pid = getpid();
@@ -3197,8 +3197,9 @@ void initServer(void) {
         serverLog(LL_WARNING, "Failed to configure TLS. Check logs for more info.");
         exit(1);
     }
-
+    // 创建共享对象集合，这些数据可在各场景中共享使用,如小数字 0～9999、常用字符串+OK\r\n（命令处理成功响应字符串）、+PONG\r\n（ping 命令响应字符串）
     createSharedObjects();
+    // 尝试修改环境变量，提高系统允许打开的文件描述符上限，避免由于大量客户端连接（Socket 文件描述符）导致错误。
     adjustOpenFilesLimit();
     const char *clk_msg = monotonicInit();
     serverLog(LL_NOTICE, "monotonic clock: %s", clk_msg);
@@ -3213,7 +3214,7 @@ void initServer(void) {
     // 分配db内存
     server.db = zmalloc(sizeof(redisDb)*server.dbnum);
 
-    /* 打开用户命令的TCP监听套接字 */
+    /* 监听端口 */
     if (server.port != 0 &&
         listenToPort(server.port,&server.ipfd) == C_ERR) {
         serverLog(LL_WARNING, "Failed listening on port %u (TCP), aborting.", server.port);
@@ -3257,6 +3258,7 @@ void initServer(void) {
         server.db[j].defrag_later = listCreate();
         listSetFreeMethod(server.db[j].defrag_later,(void (*)(void*))sdsfree);
     }
+    //实现 LRU/LFU 近似算法
     evictionPoolAlloc(); /* Initialize the LRU keys pool. */
     server.pubsub_channels = dictCreate(&keylistDictType,NULL);
     server.pubsub_patterns = dictCreate(&keylistDictType,NULL);
@@ -3308,7 +3310,7 @@ void initServer(void) {
     server.aof_last_write_errno = 0;
     server.repl_good_slaves_count = 0;
 
-    /* 创建定时器回调，这是我们增量处理许多后台操作的方法，比如客户端超时，清除未访问的过期键等等. */
+    /* 创建一个时间事件，执行函数为 serverCron，这是我们增量处理许多后台操作的方法，比如客户端超时，清除未访问的过期键等等. */
     if (aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
         serverPanic("Can't create event loop timers.");
         exit(1);
@@ -3321,6 +3323,7 @@ void initServer(void) {
     if (createSocketAcceptHandler(&server.tlsfd, acceptTLSHandler) != C_OK) {
         serverPanic("Unrecoverable error creating TLS socket accept handler.");
     }
+    //创建文件事件，并注册相应的事件处理函数
     if (server.sofd > 0 && aeCreateFileEvent(server.el,server.sofd,AE_READABLE,
         acceptUnixHandler,NULL) == AE_ERR) serverPanic("Unrecoverable error creating server.sofd file event.");
 
@@ -3335,13 +3338,12 @@ void initServer(void) {
                 "blocked clients subsystem.");
     }
 
-    /* Register before and after sleep handlers (note this needs to be done
-     * before loading persistence since it is used by processEventsWhileBlocked.
-     * 在睡眠处理程序之前和之后注册*/
+    /*
+     * 注册事件循环器的钩子函数，事件循环器在每次阻塞前后都会调用钩子函数*/
     aeSetBeforeSleepProc(server.el,beforeSleep);
     aeSetAfterSleepProc(server.el,afterSleep);
 
-    /* Open the AOF file if needed. */
+    /* 如果需要，打开AOF文件. */
     if (server.aof_state == AOF_ON) {
         server.aof_fd = open(server.aof_filename,
                                O_WRONLY|O_APPEND|O_CREAT,0644);
@@ -3361,11 +3363,14 @@ void initServer(void) {
         server.maxmemory = 3072LL*(1024*1024); /* 3 GB */
         server.maxmemory_policy = MAXMEMORY_NO_EVICTION;
     }
-    // 如果是集群，则初始集群
+    // 如果是Cluster 模式启动则初始化集群相关的
     if (server.cluster_enabled) clusterInit();
     replicationScriptCacheInit();
+    // 初始化脚本
     scriptingInit(1);
+    // 初始化慢日志机制
     slowlogInit();
+    //初始化延迟监控机制
     latencyMonitorInit();
     
     /* Initialize ACL default password if it exists */
