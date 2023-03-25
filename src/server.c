@@ -2679,10 +2679,12 @@ void initServerConfig(void) {
     server.aof_fd = -1;
     server.aof_selected_db = -1; /* Make sure the first time will not match */
     server.aof_flush_postponed_start = 0;
+
     server.pidfile = NULL;
     server.active_defrag_running = 0;
     server.notify_keyspace_events = 0;
     server.blocked_clients = 0;
+
     memset(server.blocked_clients_by_type,0,
            sizeof(server.blocked_clients_by_type));
     server.shutdown_asap = 0;
@@ -3159,8 +3161,8 @@ void initServer(void) {
             server.syslog_facility);
     }
 
-    /* Initialization after setting defaults from the config system. */
-    /* 从配置系统中设置默认值后的初始化 */
+
+    /* 设置默认值后的初始化 */
     server.aof_state = server.aof_enabled ? AOF_ON : AOF_OFF;
     server.hz = server.config_hz;
     server.pid = getpid();
@@ -3200,6 +3202,7 @@ void initServer(void) {
     adjustOpenFilesLimit();
     const char *clk_msg = monotonicInit();
     serverLog(LL_NOTICE, "monotonic clock: %s", clk_msg);
+    // 创建事件驱动框架
     server.el = aeCreateEventLoop(server.maxclients+CONFIG_FDSET_INCR);
     if (server.el == NULL) {
         serverLog(LL_WARNING,
@@ -3207,9 +3210,10 @@ void initServer(void) {
             strerror(errno));
         exit(1);
     }
+    // 分配db内存
     server.db = zmalloc(sizeof(redisDb)*server.dbnum);
 
-    /* Open the TCP listening socket for the user commands. */
+    /* 打开用户命令的TCP监听套接字 */
     if (server.port != 0 &&
         listenToPort(server.port,&server.ipfd) == C_ERR) {
         serverLog(LL_WARNING, "Failed listening on port %u (TCP), aborting.", server.port);
@@ -3234,13 +3238,13 @@ void initServer(void) {
         anetCloexec(server.sofd);
     }
 
-    /* Abort if there are no listening sockets at all. */
+    /* 如果根本没有监听套接字，则中止. */
     if (server.ipfd.count == 0 && server.tlsfd.count == 0 && server.sofd < 0) {
         serverLog(LL_WARNING, "Configured to not listen anywhere, exiting.");
         exit(1);
     }
 
-    /* Create the Redis databases, and initialize other internal state. */
+    /* 创建Redis数据库，初始化其他内部状态。 */
     for (j = 0; j < server.dbnum; j++) {
         server.db[j].dict = dictCreate(&dbDictType,NULL);
         server.db[j].expires = dictCreate(&dbExpiresDictType,NULL);
@@ -3304,16 +3308,13 @@ void initServer(void) {
     server.aof_last_write_errno = 0;
     server.repl_good_slaves_count = 0;
 
-    /* Create the timer callback, this is our way to process many background
-     * operations incrementally, like clients timeout, eviction of unaccessed
-     * expired keys and so forth. */
+    /* 创建定时器回调，这是我们增量处理许多后台操作的方法，比如客户端超时，清除未访问的过期键等等. */
     if (aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
         serverPanic("Can't create event loop timers.");
         exit(1);
     }
 
-    /* Create an event handler for accepting new connections in TCP and Unix
-     * domain sockets. */
+    /* 创建一个事件处理程序，用于接受TCP和Unix域套接字中的新连接. */
     if (createSocketAcceptHandler(&server.ipfd, acceptTcpHandler) != C_OK) {
         serverPanic("Unrecoverable error creating TCP socket accept handler.");
     }
@@ -3325,7 +3326,8 @@ void initServer(void) {
 
 
     /* Register a readable event for the pipe used to awake the event loop
-     * when a blocked client in a module needs attention. */
+     * when a blocked client in a module needs attention.
+     * 为管道注册一个可读事件，用于在模块中阻塞的客户端需要注意时唤醒事件循环。*/
     if (aeCreateFileEvent(server.el, server.module_blocked_pipe[0], AE_READABLE,
         moduleBlockedClientPipeReadable,NULL) == AE_ERR) {
             serverPanic(
@@ -3334,7 +3336,8 @@ void initServer(void) {
     }
 
     /* Register before and after sleep handlers (note this needs to be done
-     * before loading persistence since it is used by processEventsWhileBlocked. */
+     * before loading persistence since it is used by processEventsWhileBlocked.
+     * 在睡眠处理程序之前和之后注册*/
     aeSetBeforeSleepProc(server.el,beforeSleep);
     aeSetAfterSleepProc(server.el,afterSleep);
 
@@ -3358,7 +3361,7 @@ void initServer(void) {
         server.maxmemory = 3072LL*(1024*1024); /* 3 GB */
         server.maxmemory_policy = MAXMEMORY_NO_EVICTION;
     }
-
+    // 如果是集群，则初始集群
     if (server.cluster_enabled) clusterInit();
     replicationScriptCacheInit();
     scriptingInit(1);
@@ -6230,7 +6233,7 @@ int main(int argc, char **argv) {
     dictSetHashFunctionSeed(hashseed);
     // 检查是否是哨兵模式
     server.sentinel_mode = checkForSentinelMode(argc,argv);
-    // 初始服务端的配置
+    // 初始服务端的默认配置
     initServerConfig();
 
     ACLInit(); /*
@@ -6284,7 +6287,7 @@ int main(int argc, char **argv) {
                 exit(1);
             }
         }
-        /* Parse command line options
+        /* 解析命令行的选项
          * Precedence wise, File, stdin, explicit options -- last config is the one that matters.
          *
          * First argument is the config file name? */
@@ -6316,14 +6319,14 @@ int main(int argc, char **argv) {
             }
             j++;
         }
-
+        // 解析命令行参数  解析配置文件
         loadServerConfig(server.configfile, config_from_stdin, options);
         if (server.sentinel_mode) loadSentinelConfigFromQueue();
         sdsfree(options);
     }
     // 哨兵模式，检查配置文件
     if (server.sentinel_mode) sentinelCheckConfigFile();
-    // 如果是后台运行
+    // 守护进程后台运行
     server.supervised = redisIsSupervised(server.supervised_mode);
     int background = server.daemonize && !server.supervised;
     if (background) daemonize();
@@ -6412,7 +6415,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* Warning the user about suspicious maxmemory setting. */
+    /* 警告可疑的max-memory设置. */
     if (server.maxmemory > 0 && server.maxmemory < 1024*1024) {
         serverLog(LL_WARNING,"WARNING: You specified a maxmemory value that is less than 1MB (current value is %llu bytes). Are you sure this is what you really want?", server.maxmemory);
     }
