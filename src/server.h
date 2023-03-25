@@ -1220,7 +1220,7 @@ struct redisServer {
     int child_type;             /* Type of current child */
     client *module_client;      /* "Fake" client to call Redis from modules */
     /* Networking */
-    int port;                   /* TCP listening port */
+    int port;                   /* tcp监听的端口 */
     int tls_port;               /* TLS listening port */
     int tcp_backlog;            /* TCP listen() backlog */
     char *bindaddr[CONFIG_BINDADDR_MAX]; /* Addresses we should bind to */
