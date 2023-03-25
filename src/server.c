@@ -6235,14 +6235,12 @@ int main(int argc, char **argv) {
     server.sentinel_mode = checkForSentinelMode(argc,argv);
     // 初始服务端的默认配置
     initServerConfig();
+    //ACL子系统必须尽快初始化，因为基本的网络代码和客户端创建都依赖于它
+    ACLInit();
 
-    ACLInit(); /*
-                  ACL子系统必须尽快初始化，因为基本的网络代码和客户端创建都依赖于它
-                  */
     // 初始化模块系统
     moduleInitModulesSystem();
     tlsInit();
-
 
     // 将可执行路径和参数存储在一个安全的地方，以便以后能够重新启动服务器
     server.executable = getAbsolutePath(argv[0]);
@@ -6260,11 +6258,12 @@ int main(int argc, char **argv) {
     }
 
     /*
-     * 检查是否需要以redis-check-rdb aof模式启动。我们只执行程序main。
-     * 然而，该程序是Redis可执行文件的一部分，因此我们可以很容易地执行RDB检查加载错误
+     * 检查是否要执行 RDB 检测或 AOF 检查，这对应了实际运行的程序是 redis-check-rdb 或 redis-check-aof
      * */
+    // 如果运行的是redis-check-rdb程序 调用redis_check_rdb_main
     if (strstr(argv[0],"redis-check-rdb") != NULL)
         redis_check_rdb_main(argc,argv,NULL);
+        // 如果运行的是redis-check-aof程序 调用redis_check_aof_main
     else if (strstr(argv[0],"redis-check-aof") != NULL)
         redis_check_aof_main(argc,argv);
 
@@ -6287,10 +6286,7 @@ int main(int argc, char **argv) {
                 exit(1);
             }
         }
-        /* 解析命令行的选项
-         * Precedence wise, File, stdin, explicit options -- last config is the one that matters.
-         *
-         * First argument is the config file name? */
+        /* 解析命令行的选项 */
         if (argv[1][0] != '-') {
             /* Replace the config file in server.exec_argv with its absolute path. */
             server.configfile = getAbsolutePath(argv[1]);
@@ -6322,6 +6318,7 @@ int main(int argc, char **argv) {
         // 解析命令行参数  解析配置文件
         loadServerConfig(server.configfile, config_from_stdin, options);
         if (server.sentinel_mode) loadSentinelConfigFromQueue();
+        //释放一个sds字符串
         sdsfree(options);
     }
     // 哨兵模式，检查配置文件
@@ -6383,7 +6380,7 @@ int main(int argc, char **argv) {
         moduleLoadFromQueue();
         ACLLoadUsersAtStartup();
         InitServerLast();
-        // 从磁盘load数据
+        // 从磁盘上load AOF 或者是 RDB 文件，以便恢复之前的数据。
         loadDataFromDisk();
         if (server.cluster_enabled) {
             if (verifyClusterConfigWithData() == C_ERR) {
@@ -6423,6 +6420,7 @@ int main(int argc, char **argv) {
     redisSetCpuAffinity(server.server_cpulist);
     setOOMScoreAdj(-1);
 
+    // 进入事件驱动框架，开始循环处理各种触发的事件
     aeMain(server.el);
     aeDeleteEventLoop(server.el);
     return 0;
