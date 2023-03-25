@@ -2628,7 +2628,15 @@ void createSharedObjects(void) {
     shared.minstring = sdsnew("minstring");
     shared.maxstring = sdsnew("maxstring");
 }
-
+/**
+ * 默认端口
+* 定时任务频率
+* 数据库数量
+* AOF 刷盘策略
+* 淘汰策略
+* 数据结构转换阈值
+* 主从复制参数
+ */
 void initServerConfig(void) {
     int j;
 
@@ -2637,6 +2645,7 @@ void initServerConfig(void) {
     server.runid[CONFIG_RUN_ID_SIZE] = '\0';
     changeReplicationId();
     clearReplicationId2();
+    //尽快初始化它，即使它可能在加载配置后更新。这个值可以在服务器初始化之前使用
     server.hz = CONFIG_DEFAULT_HZ; /* Initialize it ASAP, even if it may get
                                       updated later after loading the config.
                                       This value may be used before the server
@@ -2656,6 +2665,7 @@ void initServerConfig(void) {
     server.loading = 0;
     server.loading_rdb_used_mem = 0;
     server.logfile = zstrdup(CONFIG_DEFAULT_LOGFILE);
+    // aof相关配置
     server.aof_state = AOF_OFF;
     server.aof_rewrite_base_size = 0;
     server.aof_rewrite_scheduled = 0;
@@ -2676,6 +2686,7 @@ void initServerConfig(void) {
     memset(server.blocked_clients_by_type,0,
            sizeof(server.blocked_clients_by_type));
     server.shutdown_asap = 0;
+    // 集群配置
     server.cluster_configfile = zstrdup(CONFIG_DEFAULT_CLUSTER_CONFIG_FILE);
     server.cluster_module_flags = CLUSTER_MODULE_FLAG_NONE;
     server.migrate_cached_sockets = dictCreate(&migrateCacheDictType,NULL);
@@ -2690,9 +2701,10 @@ void initServerConfig(void) {
     appendServerSaveParams(300,100);  /* save after 5 minutes and 100 changes */
     appendServerSaveParams(60,10000); /* save after 1 minute and 10000 changes */
 
-    /* Replication related */
+    /* Replication related 复制相关*/
     server.masterauth = NULL;
     server.masterhost = NULL;
+    // 默认端口
     server.masterport = 6379;
     server.master = NULL;
     server.cached_master = NULL;
@@ -2705,29 +2717,29 @@ void initServerConfig(void) {
     server.repl_down_since = 0; /* Never connected, repl is down since EVER. */
     server.master_repl_offset = 0;
 
-    /* Replication partial resync backlog */
+    /* Replication partial resync backlog 复制部分重新同步backlog*/
     server.repl_backlog = NULL;
     server.repl_backlog_histlen = 0;
     server.repl_backlog_idx = 0;
     server.repl_backlog_off = 0;
     server.repl_no_slaves_since = time(NULL);
 
-    /* Failover related */
+    /* Failover related 故障转移相关*/
     server.failover_end_time = 0;
     server.force_failover = 0;
     server.target_replica_host = NULL;
     server.target_replica_port = 0;
     server.failover_state = NO_FAILOVER;
 
-    /* Client output buffer limits */
+    /* Client output buffer limits 客户端输出缓冲区限制*/
     for (j = 0; j < CLIENT_TYPE_OBUF_COUNT; j++)
         server.client_obuf_limits[j] = clientBufferLimitsDefaults[j];
 
-    /* Linux OOM Score config */
+    /* Linux OOM Score config Linux OOM评分配置*/
     for (j = 0; j < CONFIG_OOM_COUNT; j++)
         server.oom_score_adj_values[j] = configOOMScoreAdjValuesDefaults[j];
 
-    /* Double constants initialization */
+    /* Double constants initialization 双常数初始化*/
     R_Zero = 0.0;
     R_PosInf = 1.0/R_Zero;
     R_NegInf = -1.0/R_Zero;
@@ -6195,9 +6207,12 @@ int main(int argc, char **argv) {
 #ifdef INIT_SETPROCTITLE_REPLACEMENT
     spt_init(argc, argv);
 #endif
+    // 设置时区
     setlocale(LC_COLLATE,"");
     tzset(); /* Populates 'timezone' global. */
+    //Redis中对内存的管理功能由 zmalloc 完成,表示在内存不足（out of memory，缩写oom）的时候所采取的操作
     zmalloc_set_oom_handler(redisOutOfMemoryHandler);
+    //以getpid()为随机序列的种子，即将系统返回的进程ID作为随机序列的种子
     srand(time(NULL)^getpid());
     srandom(time(NULL)^getpid());
     gettimeofday(&tv,NULL);
@@ -6209,27 +6224,34 @@ int main(int argc, char **argv) {
      * race condition with threads that could be creating files or directories.
      */
     umask(server.umask = umask(0777));
-
+    // 设置随机种子
     uint8_t hashseed[16];
     getRandomBytes(hashseed,sizeof(hashseed));
     dictSetHashFunctionSeed(hashseed);
+    // 检查是否是哨兵模式
     server.sentinel_mode = checkForSentinelMode(argc,argv);
+    // 初始服务端的配置
     initServerConfig();
     ACLInit(); /* The ACL subsystem must be initialized ASAP because the
-                  basic networking code and client creation depends on it. */
+                  basic networking code and client creation depends on it.
+                  ACL子系统必须尽快初始化，因为基本的网络代码和客户端创建都依赖于它
+                  */
     moduleInitModulesSystem();
     tlsInit();
 
     /* Store the executable path and arguments in a safe place in order
      * to be able to restart the server later. */
+    // 将可执行路径和参数存储在一个安全的地方，以便以后能够重新启动服务器
     server.executable = getAbsolutePath(argv[0]);
     server.exec_argv = zmalloc(sizeof(char*)*(argc+1));
     server.exec_argv[argc] = NULL;
+    // 保存执行的参数
     for (j = 0; j < argc; j++) server.exec_argv[j] = zstrdup(argv[j]);
 
     /* We need to init sentinel right now as parsing the configuration file
      * in sentinel mode will have the effect of populating the sentinel
      * data structures with master nodes to monitor. */
+    // 如果是哨兵模式，就初始化哨兵的配置以及哨兵模式的参数
     if (server.sentinel_mode) {
         initSentinelConfig();
         initSentinel();
@@ -6237,7 +6259,10 @@ int main(int argc, char **argv) {
 
     /* Check if we need to start in redis-check-rdb/aof mode. We just execute
      * the program main. However the program is part of the Redis executable
-     * so that we can easily execute an RDB check on loading errors. */
+     * so that we can easily execute an RDB check on loading errors.
+     * 检查是否需要以redis-check-rdb aof模式启动。我们只执行程序main。
+     * 然而，该程序是Redis可执行文件的一部分，因此我们可以很容易地执行RDB检查加载错误
+     * */
     if (strstr(argv[0],"redis-check-rdb") != NULL)
         redis_check_rdb_main(argc,argv,NULL);
     else if (strstr(argv[0],"redis-check-aof") != NULL)
@@ -6320,8 +6345,9 @@ int main(int argc, char **argv) {
     }
 
     readOOMScoreAdj();
-    // 初始化
+    // 初始化服务端
     initServer();
+    serverLog(LL_WARNING,"初始化");
     if (background || server.pidfile) createPidFile();
     if (server.set_proc_title) redisSetProcTitle(NULL);
     redisAsciiArt();

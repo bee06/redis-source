@@ -71,8 +71,8 @@ typedef void aeBeforeSleepProc(struct aeEventLoop *eventLoop);
 /* File event structure */
 typedef struct aeFileEvent {
     int mask; /* one of AE_(READABLE|WRITABLE|BARRIER) */
-    aeFileProc *rfileProc;
-    aeFileProc *wfileProc;
+    aeFileProc *rfileProc; //可读事件的回调函数
+    aeFileProc *wfileProc; //可写事件的回调函数
     void *clientData;
 } aeFileEvent;
 
@@ -97,16 +97,16 @@ typedef struct aeFiredEvent {
 
 /* State of an event based program */
 typedef struct aeEventLoop {
-    int maxfd;   /* highest file descriptor currently registered */
-    int setsize; /* max number of file descriptors tracked */
+    int maxfd;   /* 当前注册的fd最大数 */
+    int setsize; /* 能注册的最大fd数 */
     long long timeEventNextId;
-    aeFileEvent *events; /* Registered events */
-    aeFiredEvent *fired; /* Fired events */
+    aeFileEvent *events; /* 已经注册的事件， events 建立了一个映射关系：fd --> event */
+    aeFiredEvent *fired; /* 已经触发的事件，记录的是触发的fd，及其事件类型 */
     aeTimeEvent *timeEventHead;
-    int stop;
-    void *apidata; /* This is used for polling API specific data */
-    aeBeforeSleepProc *beforesleep;
-    aeBeforeSleepProc *aftersleep;
+    int stop;  // EventLoop 是否停止
+    void *apidata; /* 这用于轮询特定于API的数据 */
+    aeBeforeSleepProc *beforesleep; //在 epoll_wait 阻塞之前调用的函数
+    aeBeforeSleepProc *aftersleep;// 在 epoll_wait 唤醒之后调用的函数
     int flags;
 } aeEventLoop;
 
