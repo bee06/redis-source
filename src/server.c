@@ -3197,7 +3197,8 @@ void initServer(void) {
         serverLog(LL_WARNING, "Failed to configure TLS. Check logs for more info.");
         exit(1);
     }
-    // 创建共享对象集合，这些数据可在各场景中共享使用,如小数字 0～9999、常用字符串+OK\r\n（命令处理成功响应字符串）、+PONG\r\n（ping 命令响应字符串）
+    // 创建共享对象集合，这些数据可在各场景中共享使用,
+    // 如小数字 0～9999、常用字符串+OK\r\n（命令处理成功响应字符串）、+PONG\r\n（ping 命令响应字符串）
     createSharedObjects();
     // 尝试修改环境变量，提高系统允许打开的文件描述符上限，避免由于大量客户端连接（Socket 文件描述符）导致错误。
     adjustOpenFilesLimit();
@@ -3317,7 +3318,8 @@ void initServer(void) {
     server.aof_last_write_errno = 0;
     server.repl_good_slaves_count = 0;
 
-    /* 创建一个时间事件，执行函数为 serverCron，这是我们增量处理许多后台操作的方法，比如客户端超时，清除未访问的过期键等等. */
+    /* 创建一个时间事件，执行函数为 serverCron，
+     * 这是我们增量处理许多后台操作的方法，比如客户端超时，清除未访问的过期键等等. */
     if (aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
         serverPanic("Can't create event loop timers.");
         exit(1);
