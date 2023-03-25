@@ -95,7 +95,7 @@ typedef struct aeFiredEvent {
     int mask;
 } aeFiredEvent;
 
-/* State of an event based program */
+/* 基于事件的程序的状态 */
 typedef struct aeEventLoop {
     int maxfd;   /* 当前注册的fd最大数 */
     int setsize; /* 能注册的最大fd数 */

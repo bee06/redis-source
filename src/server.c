@@ -6232,34 +6232,31 @@ int main(int argc, char **argv) {
     server.sentinel_mode = checkForSentinelMode(argc,argv);
     // 初始服务端的配置
     initServerConfig();
-    ACLInit(); /* The ACL subsystem must be initialized ASAP because the
-                  basic networking code and client creation depends on it.
+
+    ACLInit(); /*
                   ACL子系统必须尽快初始化，因为基本的网络代码和客户端创建都依赖于它
                   */
+    // 初始化模块系统
     moduleInitModulesSystem();
     tlsInit();
 
-    /* Store the executable path and arguments in a safe place in order
-     * to be able to restart the server later. */
+
     // 将可执行路径和参数存储在一个安全的地方，以便以后能够重新启动服务器
     server.executable = getAbsolutePath(argv[0]);
+    //保存执行的参数分配内存
     server.exec_argv = zmalloc(sizeof(char*)*(argc+1));
     server.exec_argv[argc] = NULL;
     // 保存执行的参数
     for (j = 0; j < argc; j++) server.exec_argv[j] = zstrdup(argv[j]);
 
-    /* We need to init sentinel right now as parsing the configuration file
-     * in sentinel mode will have the effect of populating the sentinel
-     * data structures with master nodes to monitor. */
+
     // 如果是哨兵模式，就初始化哨兵的配置以及哨兵模式的参数
     if (server.sentinel_mode) {
         initSentinelConfig();
         initSentinel();
     }
 
-    /* Check if we need to start in redis-check-rdb/aof mode. We just execute
-     * the program main. However the program is part of the Redis executable
-     * so that we can easily execute an RDB check on loading errors.
+    /*
      * 检查是否需要以redis-check-rdb aof模式启动。我们只执行程序main。
      * 然而，该程序是Redis可执行文件的一部分，因此我们可以很容易地执行RDB检查加载错误
      * */
@@ -6324,7 +6321,9 @@ int main(int argc, char **argv) {
         if (server.sentinel_mode) loadSentinelConfigFromQueue();
         sdsfree(options);
     }
+    // 哨兵模式，检查配置文件
     if (server.sentinel_mode) sentinelCheckConfigFile();
+    // 如果是后台运行
     server.supervised = redisIsSupervised(server.supervised_mode);
     int background = server.daemonize && !server.supervised;
     if (background) daemonize();
@@ -6345,6 +6344,7 @@ int main(int argc, char **argv) {
     }
 
     readOOMScoreAdj();
+
     // 初始化服务端
     initServer();
     serverLog(LL_WARNING,"初始化");
@@ -6353,7 +6353,7 @@ int main(int argc, char **argv) {
     redisAsciiArt();
     checkTcpBacklogSettings();
 
-    // 如果是哨兵模式
+    // 如果不是哨兵模式
     if (!server.sentinel_mode) {
         /* Things not needed when running in Sentinel mode. */
         serverLog(LL_WARNING,"Server initialized");
@@ -6380,6 +6380,7 @@ int main(int argc, char **argv) {
         moduleLoadFromQueue();
         ACLLoadUsersAtStartup();
         InitServerLast();
+        // 从磁盘load数据
         loadDataFromDisk();
         if (server.cluster_enabled) {
             if (verifyClusterConfigWithData() == C_ERR) {
