@@ -3220,13 +3220,14 @@ void initServer(void) {
         serverLog(LL_WARNING, "Failed listening on port %u (TCP), aborting.", server.port);
         exit(1);
     }
+    /* 配置了 server.tls_ port，则开启 TLS Socket 服务，Redis 6.0 开始支持 TLS 连接. */
     if (server.tls_port != 0 &&
         listenToPort(server.tls_port,&server.tlsfd) == C_ERR) {
         serverLog(LL_WARNING, "Failed listening on port %u (TLS), aborting.", server.tls_port);
         exit(1);
     }
 
-    /* Open the listening Unix domain socket. */
+    /* 配置了 server.unixsocket，则开启 UNIX Socket 服务. */
     if (server.unixsocket != NULL) {
         unlink(server.unixsocket); /* don't care if this fails */
         server.sofd = anetUnixServer(server.neterr,server.unixsocket,
@@ -3247,18 +3248,24 @@ void initServer(void) {
 
     /* 创建Redis数据库，初始化其他内部状态。 */
     for (j = 0; j < server.dbnum; j++) {
+        // 创建全局哈希表
         server.db[j].dict = dictCreate(&dbDictType,NULL);
+        //创建过期key的信息表
         server.db[j].expires = dictCreate(&dbExpiresDictType,NULL);
+        //为被BLPOP阻塞的key创建信息表
         server.db[j].expires_cursor = 0;
+        //为被BLPOP阻塞的key创建信息表
         server.db[j].blocking_keys = dictCreate(&keylistDictType,NULL);
+        //为将执行PUSH的阻塞key创建信息表
         server.db[j].ready_keys = dictCreate(&objectKeyPointerValueDictType,NULL);
+        //为被MULTI/WATCH操作监听的key创建信息表
         server.db[j].watched_keys = dictCreate(&keylistDictType,NULL);
         server.db[j].id = j;
         server.db[j].avg_ttl = 0;
         server.db[j].defrag_later = listCreate();
         listSetFreeMethod(server.db[j].defrag_later,(void (*)(void*))sdsfree);
     }
-    //实现 LRU/LFU 近似算法
+    //初始化LRU 池
     evictionPoolAlloc(); /* Initialize the LRU keys pool. */
     server.pubsub_channels = dictCreate(&keylistDictType,NULL);
     server.pubsub_patterns = dictCreate(&keylistDictType,NULL);
@@ -3320,17 +3327,16 @@ void initServer(void) {
     if (createSocketAcceptHandler(&server.ipfd, acceptTcpHandler) != C_OK) {
         serverPanic("Unrecoverable error creating TCP socket accept handler.");
     }
+
     if (createSocketAcceptHandler(&server.tlsfd, acceptTLSHandler) != C_OK) {
         serverPanic("Unrecoverable error creating TLS socket accept handler.");
     }
+
     //创建文件事件，并注册相应的事件处理函数
     if (server.sofd > 0 && aeCreateFileEvent(server.el,server.sofd,AE_READABLE,
         acceptUnixHandler,NULL) == AE_ERR) serverPanic("Unrecoverable error creating server.sofd file event.");
 
-
-    /* Register a readable event for the pipe used to awake the event loop
-     * when a blocked client in a module needs attention.
-     * 为管道注册一个可读事件，用于在模块中阻塞的客户端需要注意时唤醒事件循环。*/
+    /*  注册一个可读事件，用于在模块中阻塞的客户端需要注意时唤醒事件循环。*/
     if (aeCreateFileEvent(server.el, server.module_blocked_pipe[0], AE_READABLE,
         moduleBlockedClientPipeReadable,NULL) == AE_ERR) {
             serverPanic(
@@ -3338,8 +3344,7 @@ void initServer(void) {
                 "blocked clients subsystem.");
     }
 
-    /*
-     * 注册事件循环器的钩子函数，事件循环器在每次阻塞前后都会调用钩子函数*/
+    /* 注册事件驱动框架的钩子函数，事件循环器在每次阻塞前后都会调用钩子函数*/
     aeSetBeforeSleepProc(server.el,beforeSleep);
     aeSetAfterSleepProc(server.el,afterSleep);
 
@@ -3354,10 +3359,7 @@ void initServer(void) {
         }
     }
 
-    /* 32 bit instances are limited to 4GB of address space, so if there is
-     * no explicit limit in the user provided configuration we set a limit
-     * at 3 GB using maxmemory with 'noeviction' policy'. This avoids
-     * useless crashes of the Redis instance for out of memory. */
+    /* 如果 Redis 运行在 32 位操作系统上，由于 32 位操作系统内存空间限制为 4GB，所以将 Redis 使用内存限制为 3GB，避免 Redis 服务器因内存不足而崩溃。. */
     if (server.arch_bits == 32 && server.maxmemory == 0) {
         serverLog(LL_WARNING,"Warning: 32 bit instance detected but no memory limit set. Setting 3 GB maxmemory limit with 'noeviction' policy now.");
         server.maxmemory = 3072LL*(1024*1024); /* 3 GB */
@@ -3366,7 +3368,7 @@ void initServer(void) {
     // 如果是Cluster 模式启动则初始化集群相关的
     if (server.cluster_enabled) clusterInit();
     replicationScriptCacheInit();
-    // 初始化脚本
+    // 初始化LUA机制
     scriptingInit(1);
     // 初始化慢日志机制
     slowlogInit();
