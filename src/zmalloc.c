@@ -114,7 +114,7 @@ void *ztrymalloc_usable(size_t size, size_t *usable) {
 #endif
 }
 
-/* Allocate memory or panic */
+/* 分配内存 */
 void *zmalloc(size_t size) {
     void *ptr = ztrymalloc_usable(size, NULL);
     if (!ptr) zmalloc_oom_handler(size);

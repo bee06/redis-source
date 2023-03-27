@@ -2703,7 +2703,7 @@ void initServerConfig(void) {
     appendServerSaveParams(300,100);  /* save after 5 minutes and 100 changes */
     appendServerSaveParams(60,10000); /* save after 1 minute and 10000 changes */
 
-    /* Replication related 复制相关*/
+    /* 集群相关 */
     server.masterauth = NULL;
     server.masterhost = NULL;
     // 默认端口
@@ -6219,8 +6219,9 @@ int main(int argc, char **argv) {
 #ifdef INIT_SETPROCTITLE_REPLACEMENT
     spt_init(argc, argv);
 #endif
-    // 设置时区
+    // 设置字符编码
     setlocale(LC_COLLATE,"");
+    // 设置时区
     tzset(); /* Populates 'timezone' global. */
     //Redis中对内存的管理功能由 zmalloc 完成,表示在内存不足（out of memory，缩写oom）的时候所采取的操作
     zmalloc_set_oom_handler(redisOutOfMemoryHandler);

@@ -70,19 +70,19 @@ typedef void aeBeforeSleepProc(struct aeEventLoop *eventLoop);
 
 /* File event structure */
 typedef struct aeFileEvent {
-    int mask; /* one of AE_(READABLE|WRITABLE|BARRIER) */
+    int mask; /* AE_READABLE(可读事件) AE_WRITABLE(可写事件) AE_BARRIER(会影响事件的读写处理顺序为先写后读)  */
     aeFileProc *rfileProc; //可读事件的回调函数
     aeFileProc *wfileProc; //可写事件的回调函数
-    void *clientData;
+    void *clientData;  // 不同的多路费用方式特殊值
 } aeFileEvent;
 
-/* Time event structure */
+/* 时间事件结构 */
 typedef struct aeTimeEvent {
-    long long id; /* time event identifier. */
-    monotime when;
-    aeTimeProc *timeProc;
-    aeEventFinalizerProc *finalizerProc;
-    void *clientData;
+    long long id; /* 事件id. */
+    monotime when; /* 事件到达时间戳*/
+    aeTimeProc *timeProc; /*时间事件处理回调函数*/
+    aeEventFinalizerProc *finalizerProc;  /* 事件结束后析构释放资源 */
+    void *clientData;   /* 事件私有数据 */
     struct aeTimeEvent *prev;
     struct aeTimeEvent *next;
     int refcount; /* refcount to prevent timer events from being
@@ -102,7 +102,7 @@ typedef struct aeEventLoop {
     long long timeEventNextId;
     aeFileEvent *events; /* 已经注册的事件， events 建立了一个映射关系：fd --> event */
     aeFiredEvent *fired; /* 已经触发的事件，记录的是触发的fd，及其事件类型 */
-    aeTimeEvent *timeEventHead;
+    aeTimeEvent *timeEventHead; /* 已经注册的时间事件 */
     int stop;  // EventLoop 是否停止
     void *apidata; /* 这用于轮询特定于API的数据 */
     aeBeforeSleepProc *beforesleep; //在 epoll_wait 阻塞之前调用的函数
