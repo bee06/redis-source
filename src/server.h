@@ -308,10 +308,11 @@ extern int configOOMScoreAdjValuesDefaults[CONFIG_OOM_COUNT];
                                     three: normal, slave, pubsub. */
 
 /* Slave replication state. Used in server.repl_state for slaves to remember
- * what to do next. */
+ * what to do next.
+ * 从端复制状态。用于服务器。Repl_state用于从服务器记住下一步要做什么*/
 typedef enum {
-    REPL_STATE_NONE = 0,            /* No active replication */
-    REPL_STATE_CONNECT,             /* Must connect to master */
+    REPL_STATE_NONE = 0,            /* 无复制活动 */
+    REPL_STATE_CONNECT,             /* 必须连接到主机 */
     REPL_STATE_CONNECTING,          /* Connecting to master */
     /* --- Handshake states, must be ordered --- */
     REPL_STATE_RECEIVE_PING_REPLY,  /* Wait for PING reply */
@@ -1177,10 +1178,10 @@ struct redisServer {
     /* General */
     pid_t pid;                  /* Main process pid. 主进程id*/
     pthread_t main_thread_id;         /* Main thread id  主线程id*/
-    char *configfile;           /* Absolute config file path, or NULL 配置文件的绝对路径*/
-    char *executable;           /* Absolute executable file path.执行文件的绝对路径 */
-    char **exec_argv;           /* Executable argv vector (copy).执行参数 */
-    int dynamic_hz;             /* Change hz value depending on # of clients. */
+    char *configfile;           /*  配置文件的绝对路径*/
+    char *executable;           /* .执行文件的绝对路径 */
+    char **exec_argv;           /* 执行参数 */
+    int dynamic_hz;             /* 根据客户端改变hz值取决于. */
     int config_hz;              /* Configured HZ value. May be different than
                                    the actual 'hz' field value if dynamic-hz
                                    is enabled. */
@@ -1188,10 +1189,10 @@ struct redisServer {
     int hz;                     /* serverCron() calls frequency in hertz */
     int in_fork_child;          /* indication that this is a fork child */
     redisDb *db;
-    dict *commands;             /* Command table */
+    dict *commands;             /* 命令表 */
     dict *orig_commands;        /* Command table before command renaming. */
     aeEventLoop *el;
-    rax *errors;                /* Errors table */
+    rax *errors;                /* 错误表 */
     redisAtomic unsigned int lruclock; /* Clock for LRU eviction */
     volatile sig_atomic_t shutdown_asap; /* SHUTDOWN needed ASAP */
     int activerehashing;        /* Incremental rehash in serverCron() */
@@ -1462,14 +1463,14 @@ struct redisServer {
     int repl_diskless_sync_delay;   /* Delay to start a diskless repl BGSAVE. */
     /* Replication (slave) */
     char *masteruser;               /* AUTH with this user and masterauth with master */
-    sds masterauth;                 /* AUTH with this password with master */
-    char *masterhost;               /* Hostname of master */
-    int masterport;                 /* Port of master */
-    int repl_timeout;               /* Timeout after N seconds of master idle */
-    client *master;     /* Client that is master for this slave */
-    client *cached_master; /* Cached master to be reused for PSYNC. */
+    sds masterauth;                 /* 用于和主库进行验证的密码 */
+    char *masterhost;               /* 主库的机器名 */
+    int masterport;                 /* 主库的端口 */
+    int repl_timeout;               /* 主机空闲N秒后超时 */
+    client *master;     /* 从库上用来和主库的客户端 */
+    client *cached_master; /* 从库上缓存的主库信息. */
     int repl_syncio_timeout; /* Timeout for synchronous I/O calls */
-    int repl_state;          /* Replication status if the instance is a slave */
+    int repl_state;          /* 从库的复制状态机 */
     off_t repl_transfer_size; /* Size of RDB to read from master during sync. */
     off_t repl_transfer_read; /* Amount of RDB read from master during sync. */
     off_t repl_transfer_last_fsync_off; /* Offset when we fsync-ed last time. */

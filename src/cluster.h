@@ -3,6 +3,7 @@
 
 /*-----------------------------------------------------------------------------
  * Redis cluster data structures, defines, exported API.
+ * Redis集群数据结构，定义，导出API。
  *----------------------------------------------------------------------------*/
 
 #define CLUSTER_SLOTS 16384
@@ -89,8 +90,8 @@ typedef struct clusterLink {
  * as a node (if it is not already in the list). */
 #define CLUSTERMSG_TYPE_PING 0          /* Ping */
 #define CLUSTERMSG_TYPE_PONG 1          /* Pong (reply to Ping) */
-#define CLUSTERMSG_TYPE_MEET 2          /* Meet "let's join" message */
-#define CLUSTERMSG_TYPE_FAIL 3          /* Mark node xxx as failing */
+#define CLUSTERMSG_TYPE_MEET 2          /* 满足“让我们加入”的信息 */
+#define CLUSTERMSG_TYPE_FAIL 3          /* 将节点xxx标记为失败 */
 #define CLUSTERMSG_TYPE_PUBLISH 4       /* Pub/Sub Publish propagation */
 #define CLUSTERMSG_TYPE_FAILOVER_AUTH_REQUEST 5 /* May I failover? */
 #define CLUSTERMSG_TYPE_FAILOVER_AUTH_ACK 6     /* Yes, you have my vote */
@@ -224,28 +225,28 @@ typedef struct {
 } clusterMsgModule;
 
 union clusterMsgData {
-    /* PING, MEET and PONG */
+    /* Ping、Pong和Meet消息类型对应的数据结构 */
     struct {
         /* Array of N clusterMsgDataGossip structures */
         clusterMsgDataGossip gossip[1];
     } ping;
 
-    /* FAIL */
+    /* Fail消息类型对应的数据结构 */
     struct {
         clusterMsgDataFail about;
     } fail;
 
-    /* PUBLISH */
+    /* Publish消息类型对应的数据结构 */
     struct {
         clusterMsgDataPublish msg;
     } publish;
 
-    /* UPDATE */
+    /* Update消息类型对应的数据结构 */
     struct {
         clusterMsgDataUpdate nodecfg;
     } update;
 
-    /* MODULE */
+    /* Module消息类型对应的数据结构 */
     struct {
         clusterMsgModule msg;
     } module;
@@ -253,12 +254,13 @@ union clusterMsgData {
 
 #define CLUSTER_PROTO_VER 1 /* Cluster bus protocol version. */
 
+// 节点通信的信息
 typedef struct {
     char sig[4];        /* Signature "RCmb" (Redis Cluster message bus). */
-    uint32_t totlen;    /* Total length of this message */
-    uint16_t ver;       /* Protocol version, currently set to 1. */
+    uint32_t totlen;    /* 此消息的总长度 */
+    uint16_t ver;       /* 协议版本，当前设置为1. */
     uint16_t port;      /* TCP base port number. */
-    uint16_t type;      /* Message type */
+    uint16_t type;      /* 消息类型 */
     uint16_t count;     /* Only used for some kind of messages. */
     uint64_t currentEpoch;  /* The epoch accordingly to the sending node. */
     uint64_t configEpoch;   /* The config epoch if it's a master, or the last
@@ -266,17 +268,17 @@ typedef struct {
                                slave. */
     uint64_t offset;    /* Master replication offset if node is a master or
                            processed replication offset if node is a slave. */
-    char sender[CLUSTER_NAMELEN]; /* Name of the sender node */
-    unsigned char myslots[CLUSTER_SLOTS/8];
+    char sender[CLUSTER_NAMELEN]; /* 发送消息节点的名称 */
+    unsigned char myslots[CLUSTER_SLOTS/8]; // 发送消息节点负责的slots
     char slaveof[CLUSTER_NAMELEN];
-    char myip[NET_IP_STR_LEN];    /* Sender IP, if not all zeroed. */
+    char myip[NET_IP_STR_LEN];    /* 发送消息节点的IP. */
     char notused1[32];  /* 32 bytes reserved for future usage. */
     uint16_t pport;      /* Sender TCP plaintext port, if base port is TLS */
-    uint16_t cport;      /* Sender TCP cluster bus port */
+    uint16_t cport;      /* 发送消息节点的通信端口 */
     uint16_t flags;      /* Sender node flags */
     unsigned char state; /* Cluster state from the POV of the sender */
     unsigned char mflags[3]; /* Message flags: CLUSTERMSG_FLAG[012]_... */
-    union clusterMsgData data;
+    union clusterMsgData data; // 消息体
 } clusterMsg;
 
 #define CLUSTERMSG_MIN_LEN (sizeof(clusterMsg)-sizeof(union clusterMsgData))

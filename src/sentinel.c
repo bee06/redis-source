@@ -464,6 +464,7 @@ void sentinelRoleCommand(client *c);
 void sentinelConfigGetCommand(client *c);
 void sentinelConfigSetCommand(client *c);
 
+// 哨兵的命令
 struct redisCommand sentinelcmds[] = {
     {"ping",pingCommand,1,"fast @connection",0,NULL,0,0,0,0,0},
     {"sentinel",sentinelCommand,-2,"admin",0,NULL,0,0,0,0,0},
@@ -505,12 +506,11 @@ void initSentinelConfig(void) {
 
 void freeSentinelLoadQueueEntry(void *item);
 
-/* Perform the Sentinel mode initialization. */
+/* 初始化哨兵模式的参数. */
 void initSentinel(void) {
     unsigned int j;
 
-    /* Remove usual Redis commands from the command table, then just add
-     * the SENTINEL command. */
+    /* 从命令表中删除常用的Redis命令，然后添加SENTINEL命令. */
     dictEmpty(server.commands,NULL);
     dictEmpty(server.orig_commands,NULL);
     ACLClearCommandID();
@@ -529,7 +529,7 @@ void initSentinel(void) {
             serverPanic("Unsupported command flag");
     }
 
-    /* Initialize various data structures. */
+    /* 初始化各种数据结构。. */
     sentinel.current_epoch = 0;
     sentinel.masters = dictCreate(&instancesDictType,NULL);
     sentinel.tilt = 0;
@@ -5003,10 +5003,11 @@ void sentinelAbortFailover(sentinelRedisInstance *ri) {
  * in design. The function is called every second.
  * -------------------------------------------------------------------------- */
 
-/* Perform scheduled operations for the specified Redis instance. */
+/* Perform scheduled operations for the specified Redis instance. 针对指定的Redis实例执行预定操作 */
 void sentinelHandleRedisInstance(sentinelRedisInstance *ri) {
     /* ========== MONITORING HALF ============ */
     /* Every kind of instance */
+    // 重建连接
     sentinelReconnectInstance(ri);
     sentinelSendPeriodicCommands(ri);
 
@@ -5095,6 +5096,7 @@ void sentinelCheckTiltCondition(void) {
     sentinel.previous_time = mstime();
 }
 
+//哨兵的时间事件处理函数
 void sentinelTimer(void) {
     sentinelCheckTiltCondition();
     sentinelHandleDictOfRedisInstances(sentinel.masters);

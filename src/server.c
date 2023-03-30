@@ -4439,8 +4439,7 @@ int writeCommandsDeniedByDiskError(void) {
     return DISK_ERROR_TYPE_NONE;
 }
 
-/* The PING command. It works in a different way if the client is in
- * in Pub/Sub mode. */
+/* PING命令。如果客户端处于PubSub模式，则以不同的方式工作. */
 void pingCommand(client *c) {
     /* The command takes zero or one arguments. */
     if (c->argc > 2) {

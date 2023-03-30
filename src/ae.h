@@ -68,7 +68,7 @@ typedef int aeTimeProc(struct aeEventLoop *eventLoop, long long id, void *client
 typedef void aeEventFinalizerProc(struct aeEventLoop *eventLoop, void *clientData);
 typedef void aeBeforeSleepProc(struct aeEventLoop *eventLoop);
 
-/* File event structure */
+/* IO 事件 所有io都会用到文件描述符进行标记 */
 typedef struct aeFileEvent {
     int mask; /* AE_READABLE(可读事件) AE_WRITABLE(可写事件) AE_BARRIER(会影响事件的读写处理顺序为先写后读)  */
     aeFileProc *rfileProc; //可读事件的回调函数
@@ -76,7 +76,7 @@ typedef struct aeFileEvent {
     void *clientData;  // 不同的多路费用方式特殊值
 } aeFileEvent;
 
-/* 时间事件结构 */
+/* 时间事件结构 按一定时间周期触发的事件*/
 typedef struct aeTimeEvent {
     long long id; /* 事件id. */
     monotime when; /* 事件到达时间戳*/
@@ -89,7 +89,7 @@ typedef struct aeTimeEvent {
   		   * freed in recursive time event calls. */
 } aeTimeEvent;
 
-/* A fired event */
+/* 触发时间 */
 typedef struct aeFiredEvent {
     int fd;
     int mask;
