@@ -190,12 +190,12 @@ typedef struct clusterState {
  * to the first node, using the getsockname() function. Then we'll use this
  * address for all the next messages. */
 typedef struct {
-    char nodename[CLUSTER_NAMELEN];
-    uint32_t ping_sent;
-    uint32_t pong_received;
-    char ip[NET_IP_STR_LEN];  /* IP address last time it was seen */
-    uint16_t port;              /* base port last time it was seen */
-    uint16_t cport;             /* cluster port last time it was seen */
+    char nodename[CLUSTER_NAMELEN]; //节点名称
+    uint32_t ping_sent;//节点发送Ping的时间
+    uint32_t pong_received; //节点收到Pong的时间
+    char ip[NET_IP_STR_LEN];  /* 节点ip */
+    uint16_t port;              /* 节点和客户端的通信端口 */
+    uint16_t cport;             /* 节点用于集群通信的端口 */
     uint16_t flags;             /* node->flags copy */
     uint16_t pport;             /* plaintext-port, when base port is TLS */
     uint16_t notused1;
