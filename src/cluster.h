@@ -82,7 +82,7 @@ typedef struct clusterLink {
 #define CLUSTER_TODO_FSYNC_CONFIG (1<<3)
 #define CLUSTER_TODO_HANDLE_MANUALFAILOVER (1<<4)
 
-/* Message types.
+/* 消息的类型.
  *
  * Note that the PING, PONG and MEET messages are actually the same exact
  * kind of packet. PONG is the reply to ping, in the exact format as a PING,
@@ -144,6 +144,7 @@ typedef struct clusterNode {
     list *fail_reports;         /* List of nodes signaling this as failing */
 } clusterNode;
 
+// 集群状态
 typedef struct clusterState {
     clusterNode *myself;  /* This node */
     uint64_t currentEpoch;
@@ -184,7 +185,7 @@ typedef struct clusterState {
                                        excluding nodes without address. */
 } clusterState;
 
-/* Redis cluster messages header */
+/* Redis集群消息头*/
 
 /* Initially we don't know our "name", but we'll find it once we connect
  * to the first node, using the getsockname() function. Then we'll use this

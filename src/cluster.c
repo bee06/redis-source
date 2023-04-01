@@ -3604,6 +3604,8 @@ void clusterCron(void) {
             clusterNode *this = dictGetVal(de);
 
             /* 不向断连的节点、当前节点和正在握手的节点发送Ping消息. */
+
+
             if (this->link == NULL || this->ping_sent != 0) continue;
             if (this->flags & (CLUSTER_NODE_MYSELF|CLUSTER_NODE_HANDSHAKE))
                 continue;
