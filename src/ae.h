@@ -89,7 +89,7 @@ typedef struct aeTimeEvent {
   		   * freed in recursive time event calls. */
 } aeTimeEvent;
 
-/* 触发时间 */
+/* 存储待处理的文件事件 */
 typedef struct aeFiredEvent {
     int fd;
     int mask;

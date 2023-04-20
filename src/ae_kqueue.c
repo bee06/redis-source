@@ -33,15 +33,17 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
+//aeApiState结构体定义
 typedef struct aeApiState {
-    int kqfd;
-    struct kevent *events;
+    int kqfd;//epoll实例的描述符
+    struct kevent *events; //epoll_event结构体数组，记录监听事件
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventLoop) {
     aeApiState *state = zmalloc(sizeof(aeApiState));
 
     if (!state) return -1;
+    //将epoll_event数组保存在aeApiState结构体变量state中
     state->events = zmalloc(sizeof(struct kevent)*eventLoop->setsize);
     if (!state->events) {
         zfree(state);
